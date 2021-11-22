@@ -1,0 +1,10 @@
+1. Complete deposit and withdraw functions 
+2. Input for date/time
+3. Input for number of steps
+4. Enable user to trigger distribution
+5. Make explainer video (5 mins)
+
+Extra
+
+1. Implement Keepers to automatically perform distribution: https://docs.chain.link/docs/chainlink-keepers/introduction/
+2. Enable others to sponsor

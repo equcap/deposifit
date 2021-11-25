@@ -10,9 +10,8 @@ contract pledge {
     bool public steps_reached=false;
     uint256 public steps_target=100000;
     uint256 public date_target=20210101;
-    uint256 private correct_password = 42;
     uint256 public minimumUSD = 50 * 10 ** 18; //require at least 50 usd in stupid units
-    
+    address rinkby_eth_usd = 0x8A753747A1Fa494EC906cE90E9f37563A8AF630e;
     uint8 public max_donors = 20; // max number of donors so dont risk gas getting too expensive
     uint8 public donors_so_far = 0;
     
@@ -28,12 +27,12 @@ contract pledge {
 
         //Not sure if/why we need this
         function getVersion() public view returns (uint256){
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(0x8A753747A1Fa494EC906cE90E9f37563A8AF630e);
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(rinkby_eth_usd); 
         return priceFeed.version();
     }
     
     function getPrice() public view returns(uint256){
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(0x8A753747A1Fa494EC906cE90E9f37563A8AF630e);
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(rinkby_eth_usd);
         (,int256 answer,,,) = priceFeed.latestRoundData();
          return uint256(answer * 10000000000);
     }
@@ -56,7 +55,7 @@ contract pledge {
     }
     
     
-    constructor(uint256 _steps_target, uint256 _date_target) public payable{
+    constructor(uint256 _steps_target, uint256 _date_target, address payable _success_destination, address payable _fail_destination) public payable{
         //owner = msg.sender; // What does this do?
         
         require(_steps_target > 100,"have some ambition");
@@ -68,13 +67,23 @@ contract pledge {
         // code below same as fund() - see there for comments
         require(getConversionRate(msg.value) >= minimumUSD, "You need to spend more ETH!");
         address_to_deposit[msg.sender].amount += msg.value; 
+        address_to_deposit[msg.sender].success_destination = _success_destination;
+        address_to_deposit[msg.sender].fail_destination = _fail_destination;
         userAddresses.push(msg.sender); 
     }
-    function fund() external payable{
+    function fund(address payable _success_destination, address payable _fail_destination) external payable{
         require(donors_so_far<max_donors, "sorry this contract is full");
         require(getConversionRate(msg.value) >= minimumUSD, "comeon, be generous");
-        address_to_deposit[msg.sender].amount += msg.value; /// Will the msg indicate what token too, do we need a dif function for every ERC-20
-        userAddresses.push(msg.sender); //need an array to record these to iterate the mapping
+        
+        if (address_to_deposit[msg.sender].amount==0){ // this person hasn't previously submitted -- min deposit ensures this
+            address_to_deposit[msg.sender].amount += msg.value; /// Will the msg indicate what token too, do we need a dif function for every ERC-20
+            address_to_deposit[msg.sender].success_destination = _success_destination;
+            address_to_deposit[msg.sender].fail_destination = _fail_destination;
+            userAddresses.push(msg.sender); //need an array to record these to iterate the mapping
+        }
+        else{
+            address_to_deposit[msg.sender].amount += msg.value; /// Will the msg indicate what token too, do we need a dif function for every ERC-20
+        }
     }
     
     //This is internal because nobody should have the power to distribute the eth other than the 'check' function
@@ -102,14 +111,7 @@ contract pledge {
     }
     
     // function for keeper to trigger which will check date and steps and distribute eth if appropriate
-    function check(uint256 password) public returns(bool){
-        
-        //require(msg.sender==oracle address) ----------------------- do we want this? perhaps anyone should be able to trigger a check
-        // Perhaps dont want the password either
-        if (password != correct_password){
-            return false;
-        }
-        
+    function check() public returns(bool){
         uint256 date = query_date();
         uint256 steps = query_steps();
         
@@ -120,7 +122,6 @@ contract pledge {
             steps_reached=true;
         }
         if (date_reached){
-            // trigger eth distribution if date reached
             distribute_eth(steps_reached);
             return true;
         }

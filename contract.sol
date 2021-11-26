@@ -133,9 +133,10 @@ contract pledge is KeeperCompatibleInterface {
     
     
     function checkUpkeep(bytes calldata /* checkData */) external override returns (bool upkeepNeeded, bytes memory /* performData */) {
-        upkeep_needed = query_date() >= date_target;
+        upkeepNeeded = query_date() >= date_target;
         date_reached=true;
         // We don't use the checkData in this example. The checkData is defined when the Upkeep was registered.
+        return upkeepNeeded;
     }
 
     function performUpkeep(bytes calldata /* performData */) external override {

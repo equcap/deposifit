@@ -7,15 +7,17 @@ import "@chainlink/contracts/src/v0.7/KeeperCompatible.sol";
 
 contract pledge is KeeperCompatibleInterface {
     using SafeMathChainlink for uint256; // I don't know why but it sounds nice 
+
+    uint256 public immutable steps_target=100000;
+    uint256 public immutable date_target = 1669399641;  //this date is one year from now;
+    uint256 public immutable minimumUSD = 50 * 10 ** 18; //require at least 50 usd in stupid units
+    //address rinkby_eth_usd = 0x8A753747A1Fa494EC906cE90E9f37563A8AF630e;
+    address immutable kovan_eth_usd = 0x9326BFA02ADD2366b30bacB125260Af641031331;
+    uint8 public immutable max_donors = 20; // max number of donors so dont risk gas getting too expensive
+    
+    uint8 public donors_so_far = 0;
     bool public date_reached=false;
     bool public steps_reached=false;
-    uint256 public steps_target=100000;
-    uint256 public date_target = 1669399641;  //this date is one year from now;
-    uint256 public minimumUSD = 50 * 10 ** 18; //require at least 50 usd in stupid units
-    //address rinkby_eth_usd = 0x8A753747A1Fa494EC906cE90E9f37563A8AF630e;
-    address kovan_eth_usd = 0x9326BFA02ADD2366b30bacB125260Af641031331;
-    uint8 public max_donors = 20; // max number of donors so dont risk gas getting too expensive
-    uint8 public donors_so_far = 0;
     
     // a new type to contain all relevant info about a depoit to the contract
     struct deposit{
@@ -23,6 +25,7 @@ contract pledge is KeeperCompatibleInterface {
         address payable success_destination;
         address payable fail_destination;
     }
+    
     mapping (address=>deposit) public address_to_deposit;
     address[] public userAddresses; // this is needed to iterate the mapping. mappings alone cannot be iterated
     

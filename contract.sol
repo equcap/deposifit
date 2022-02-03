@@ -1,8 +1,9 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.7.0;
 // SPDX-License-Identifier: MIT
 
-import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
-import "@chainlink/contracts/src/v0.6/vendor/SafeMathChainlink.sol";
+import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
+import "@chainlink/contracts/src/v0.7/vendor/SafeMathChainlink.sol";
+// what is SafeMathChainklink.sol?
 import "@chainlink/contracts/src/v0.7/KeeperCompatible.sol";
 
 contract pledge is KeeperCompatibleInterface {
@@ -59,14 +60,15 @@ contract pledge is KeeperCompatibleInterface {
         return 100000;
     }
     
+    // error due to including "public" in constructor: https://ethereum.stackexchange.com/questions/98453/visibility-for-constructor-is-ignored-if-you-want-the-contract-to-be-non-deploy/101614
     
-    constructor(uint256 _steps_target, uint256 _date_target, address payable _success_destination, address payable _fail_destination) public payable{
+    constructor(uint256 _steps_target, uint256 _date_target, address payable _success_destination, address payable _fail_destination) payable{
         //owner = msg.sender; // What does this do?
         
         require(_steps_target > 100,"have some ambition");
         require(_date_target > block.timestamp, "that's in the past" ); // Could query todays date here if it were worth the money to bother
         
-        steps_target= _steps_target;
+        steps_target = _steps_target;
         date_target = _date_target;
         
         // code below same as fund() - see there for comments
@@ -132,14 +134,13 @@ contract pledge is KeeperCompatibleInterface {
         }
     }
     
-    // KEEPER STUFF
+    // KEEPERS STUFF
     
     
     function checkUpkeep(bytes calldata /* checkData */) external override returns (bool upkeepNeeded, bytes memory /* performData */) {
         upkeepNeeded = query_date() >= date_target;
-        date_reached=true;
         // We don't use the checkData in this example. The checkData is defined when the Upkeep was registered.
-        return upkeepNeeded;
+        // don't think this is needed: return upkeepNeeded;
     }
 
     function performUpkeep(bytes calldata /* performData */) external override {
